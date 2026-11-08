@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from storeops.errors import NotFoundError
-from storeops.models import StaffMember
+from storeops.models import StaffMember, StaffRole
 from storeops.staff.repository import StaffRepository
 from storeops.staff.service import StaffService
 
@@ -27,7 +27,7 @@ def test_get_staff_member(staff_service: StaffService) -> None:
         store_id=store_id,
         name="John Doe",
         email="john@example.com",
-        role="staff",
+        role=StaffRole.ASSOCIATE,
         created_at=datetime.utcnow(),
     )
 
@@ -52,7 +52,7 @@ def test_list_staff(staff_service: StaffService) -> None:
         store_id=store_id,
         name="John Doe",
         email="john@example.com",
-        role="staff",
+        role=StaffRole.ASSOCIATE,
         created_at=datetime.utcnow(),
     )
 

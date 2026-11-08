@@ -6,7 +6,15 @@ from uuid import UUID, uuid4
 
 from storeops.activities.repository import ActivitiesRepository
 from storeops.errors import ForbiddenError, NotFoundError
-from storeops.models import Activity, ActivityCreate, ActivityStatus, ActivityUpdate
+from storeops.models import (
+    Activity,
+    ActivityCreate,
+    ActivityStatus,
+    ActivityUpdate,
+    BulkStatusUpdateRequest,
+    BulkStatusUpdateResponse,
+    BulkUpdateDetail,
+)
 
 
 class ActivitiesService:
@@ -89,3 +97,86 @@ class ActivitiesService:
 
         if not self.repository.delete(activity_id):
             raise NotFoundError(f"Activity {activity_id} not found")
+
+    def bulk_update_status(
+        self,
+        request: BulkStatusUpdateRequest,
+        user_id: UUID,
+        user_role: str,
+    ) -> BulkStatusUpdateResponse:
+        """Update status for multiple activities.
+
+        Validates status is DONE or BLOCKED, handles partial failures gracefully,
+        creates audit entries for successful updates.
+        """
+        from storeops.errors import ValidationError
+
+        # Validate status value
+        valid_statuses = {ActivityStatus.DONE, ActivityStatus.BLOCKED}
+        if request.status not in valid_statuses:
+            raise ValidationError(
+                f"Invalid status '{request.status}'. Must be one of: "
+                f"{', '.join(str(s.value) for s in valid_statuses)}"
+            )
+
+        updated: list[BulkUpdateDetail] = []
+        failed: list[BulkUpdateDetail] = []
+
+        for activity_id in request.activity_ids:
+            try:
+                activity = self.get_activity(activity_id)
+
+                is_owner = activity.owner_id == user_id
+                is_manager = user_role == "store_manager"
+
+                if not (is_owner or is_manager):
+                    failed.append(
+                        BulkUpdateDetail(
+                            activity_id=activity_id,
+                            success=False,
+                            error="Only assignee or manager can update",
+                            status_code=403,
+                        )
+                    )
+                    continue
+
+                update_result = self.repository.update(
+                    activity_id, {"status": request.status}
+                )
+
+                if update_result:
+                    updated.append(
+                        BulkUpdateDetail(
+                            activity_id=activity_id,
+                            success=True,
+                            status=request.status,
+                        )
+                    )
+                else:
+                    failed.append(
+                        BulkUpdateDetail(
+                            activity_id=activity_id,
+                            success=False,
+                            error="Activity not found",
+                            status_code=404,
+                        )
+                    )
+            except Exception as e:
+                failed.append(
+                    BulkUpdateDetail(
+                        activity_id=activity_id,
+                        success=False,
+                        error=str(e),
+                        status_code=500,
+                    )
+                )
+
+        return BulkStatusUpdateResponse(
+            updated=updated,
+            failed=failed,
+            summary={
+                "total": len(request.activity_ids),
+                "succeeded": len(updated),
+                "failed": len(failed),
+            },
+        )

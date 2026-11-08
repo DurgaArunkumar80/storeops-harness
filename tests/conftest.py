@@ -13,9 +13,14 @@ from storeops.models import (
     Activity,
     ActivityStatus,
     Alert,
+    AlertType,
     AuthContext,
+    NotificationChannel,
     Programme,
     StaffMember,
+    StaffRole,
+    TaskCategory,
+    TaskPriority,
 )
 from storeops.programmes.repository import ProgrammesRepository
 from storeops.staff.repository import StaffRepository
@@ -54,9 +59,9 @@ def sample_activity(store_id: UUID, user_id: UUID) -> Activity:
         programme_id=None,
         title="Test Activity",
         description="Test activity description",
-        status=ActivityStatus.PENDING,
-        priority="medium",
-        category="maintenance",
+        status=ActivityStatus.TODO,
+        priority=TaskPriority.MEDIUM,
+        category=TaskCategory.GENERAL,
         assignee_id=None,
         owner_id=user_id,
         created_at=datetime.utcnow(),
@@ -85,7 +90,7 @@ def sample_staff(store_id: UUID) -> StaffMember:
         store_id=store_id,
         name="John Doe",
         email="john@example.com",
-        role="staff",
+        role=StaffRole.ASSOCIATE,
         created_at=datetime.utcnow(),
     )
 
@@ -98,8 +103,8 @@ def sample_alert(user_id: UUID) -> Alert:
         user_id=user_id,
         title="Test Alert",
         message="Test alert message",
-        severity="info",
-        read=False,
+        alert_type=AlertType.INVENTORY,
+        channel=NotificationChannel.IN_APP,
         created_at=datetime.utcnow(),
     )
 

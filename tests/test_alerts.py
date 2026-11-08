@@ -7,7 +7,7 @@ import pytest
 
 from storeops.alerts.repository import AlertsRepository
 from storeops.alerts.service import AlertsService
-from storeops.models import Alert
+from storeops.models import Alert, AlertType, NotificationChannel
 
 
 @pytest.fixture
@@ -25,8 +25,8 @@ def test_get_user_alerts(alerts_service: AlertsService) -> None:
         user_id=user_id,
         title="Test Alert",
         message="Test message",
-        severity="info",
-        read=False,
+        alert_type=AlertType.INVENTORY,
+        channel=NotificationChannel.IN_APP,
         created_at=datetime.utcnow(),
     )
 
@@ -55,8 +55,8 @@ def test_get_user_alerts_filtered(alerts_service: AlertsService) -> None:
         user_id=user_id1,
         title="Alert 1",
         message="Message 1",
-        severity="info",
-        read=False,
+        alert_type=AlertType.SLA_BREACH,
+        channel=NotificationChannel.IN_APP,
         created_at=datetime.utcnow(),
     )
     alert2 = Alert(
@@ -64,8 +64,8 @@ def test_get_user_alerts_filtered(alerts_service: AlertsService) -> None:
         user_id=user_id2,
         title="Alert 2",
         message="Message 2",
-        severity="warning",
-        read=False,
+        alert_type=AlertType.ESCALATION,
+        channel=NotificationChannel.EMAIL,
         created_at=datetime.utcnow(),
     )
 

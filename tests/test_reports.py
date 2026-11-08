@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from storeops.models import Report
+from storeops.models import Report, ReportStatus, ReportType
 from storeops.reports.repository import ReportsRepository
 from storeops.reports.service import ReportsService
 
@@ -24,7 +24,8 @@ def test_get_store_reports(reports_service: ReportsService) -> None:
         id=uuid4(),
         store_id=store_id,
         region_id=None,
-        report_type="performance",
+        report_type=ReportType.STORE_SUMMARY,
+        status=ReportStatus.READY,
         data={"metric": "value"},
         created_at=datetime.utcnow(),
     )
@@ -33,7 +34,7 @@ def test_get_store_reports(reports_service: ReportsService) -> None:
 
     result = reports_service.get_store_reports(store_id)
     assert len(result) == 1
-    assert result[0].report_type == "performance"
+    assert result[0].report_type == ReportType.STORE_SUMMARY
 
 
 def test_get_region_reports(reports_service: ReportsService) -> None:
@@ -43,7 +44,8 @@ def test_get_region_reports(reports_service: ReportsService) -> None:
         id=uuid4(),
         store_id=None,
         region_id=region_id,
-        report_type="regional_summary",
+        report_type=ReportType.REGIONAL_ROLLUP,
+        status=ReportStatus.READY,
         data={"metric": "value"},
         created_at=datetime.utcnow(),
     )
@@ -52,4 +54,4 @@ def test_get_region_reports(reports_service: ReportsService) -> None:
 
     result = reports_service.get_region_reports(region_id)
     assert len(result) == 1
-    assert result[0].report_type == "regional_summary"
+    assert result[0].report_type == ReportType.REGIONAL_ROLLUP
